@@ -111,15 +111,16 @@ services:
             - 8002:80
         volumes:
             - ./server-gql:/usr/src/app
-    
-    web-app:
-        image: nginx:latest
-        depends: 
-        volumes:
 
-    web-cms:
+    # todo:
+    # web-app:
+   
+    # todo:
+    # web-cms:
 
-    web-etl:
+    # todo:
+    # web-etl:
+
 volumes:
     certificates:
 
