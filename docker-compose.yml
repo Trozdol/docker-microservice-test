@@ -1,0 +1,127 @@
+version: '3.9'
+services:
+
+    reverse-proxy:
+        depends_on:
+            - server-api
+            - server-etl
+            - server-gql
+            # - web-app
+            # - web-cms
+            # - web-etl
+        image: nginx:latest
+        container_name: reverse-proxy
+        hostname: alison.local
+        networks: 
+            alison-net:
+                aliases:
+                    - reverseproxy.alison
+                    - reverseproxy.alison.trozlabs.com
+        environment: 
+            ENV: development
+            APPLICATION_URL: http://alison.local
+        ports: 
+            - 8080:80
+            # - 8443:443
+        volumes:
+            - ./reverse-proxy/nginx.conf:/etc/nginx/nginx.conf
+            - ./reverse-proxy/error.log:/etc/nginx/error_log.log
+            # - certificates/:/etc/letsencrypt/
+
+    # todo:
+    # db-api:
+    #     image: mysql:latest
+
+    # todo:
+    # db-etl:
+    #     image: mysql:latest
+
+    # todo:
+    # db-gql:
+    #     image: mysql:latest
+
+    server-api:
+        # depends_on:
+        #     - db-api
+        image: trozdol/server-api
+        container_name: server-api
+        hostname: server-api
+        networks:
+            alison-net:
+                aliases:
+                    - api.alison
+                    - api.alison.trozlabs.com
+        environment:
+            NODE_ENV: dev
+            PORT: 80
+        build:
+            labels: 
+                com.trozlabs.alison.api: "Alison API"
+            context: ./server-api
+            dockerfile: ./Dockerfile
+        ports:
+            - 8000:80
+        volumes:
+            - ./server-api:/usr/src/app
+
+    server-etl:
+        # depends_on:
+        #     - db-etl
+        image: trozdol/server-etl
+        container_name: server-etl
+        hostname: server-etl
+        networks: 
+            alison-net:
+                aliases:
+                    - etl.alison
+                    - etl.alison.trozlabs.com
+        environment:
+            NODE_ENV: dev
+            PORT: 80
+        build:
+            labels: 
+                com.trozlabs.alison.etl: "Alison ETL"
+            context: ./server-etl
+            dockerfile: ./Dockerfile
+        ports:
+            - 8001:80
+        volumes:
+            - ./server-etl:/usr/src/app
+
+    server-gql:
+        # depends_on:
+        #     - db-gql
+        image: trozdol/server-gql
+        container_name: server-gql
+        hostname: server-gql
+        networks:
+            alison-net:
+                aliases:
+                    - gql.alison
+                    - gql.alison.trozlabs.com
+        environment:
+            NODE_ENV: dev
+            PORT: 80
+        build:
+            labels: 
+                com.trozlabs.alison.gql: "Alison GQL"
+            context: ./server-gql
+            dockerfile: ./Dockerfile
+        ports:
+            - 8002:80
+        volumes:
+            - ./server-gql:/usr/src/app
+    
+    web-app:
+        image: nginx:latest
+        depends: 
+        volumes:
+
+    web-cms:
+
+    web-etl:
+volumes:
+    certificates:
+
+networks:
+    alison-net:
