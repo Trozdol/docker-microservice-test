@@ -14,4 +14,5 @@ RUN npm install
 COPY . .
 
 EXPOSE 80
-CMD [ "nodemon", "index.js" ]
+
+CMD [ "node", "index.js" ]
