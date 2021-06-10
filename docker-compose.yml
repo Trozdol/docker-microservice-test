@@ -25,7 +25,7 @@ services:
             # - 8443:443
         volumes:
             - ./reverse-proxy/nginx.conf:/etc/nginx/nginx.conf
-            - ./reverse-proxy/error.log:/etc/nginx/error_log.log
+            # - ./reverse-proxy/error.log:/etc/nginx/error_log.log
             # - certificates/:/etc/letsencrypt/
 
     # todo:
