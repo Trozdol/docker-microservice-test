@@ -59,8 +59,8 @@ services:
                 com.trozlabs.alison.api: "Alison API"
             context: ./server-api
             dockerfile: ./Dockerfile
-        ports:
-            - 8000:80
+        # ports:
+        #     - 8000:80
         volumes:
             - ./server-api:/usr/src/app
 
@@ -83,8 +83,8 @@ services:
                 com.trozlabs.alison.etl: "Alison ETL"
             context: ./server-etl
             dockerfile: ./Dockerfile
-        ports:
-            - 8001:80
+        # ports:
+        #     - 8001:80
         volumes:
             - ./server-etl:/usr/src/app
 
@@ -107,8 +107,8 @@ services:
                 com.trozlabs.alison.gql: "Alison GQL"
             context: ./server-gql
             dockerfile: ./Dockerfile
-        ports:
-            - 8002:80
+        # ports:
+        #     - 8002:80
         volumes:
             - ./server-gql:/usr/src/app
 

@@ -1,0 +1,85 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+$setup = <<-SCRIPT
+
+echo "----------------------------------------------------------------------";
+echo "USER: $USER"
+echo "----------------------------------------------------------------------";
+
+apt-get update &&
+apt-get -y install nginx &&
+systemctl start nginx.service &&
+
+echo "----------------------------------------------------------------------";
+echo "CONFIGURE NGINX:";
+echo "----------------------------------------------------------------------";
+
+# remove default nginx config
+
+rm /etc/nginx/nginx.conf
+rm /etc/nginx/sites-available/default
+rm /etc/nginx/sites-enabled/default
+
+# copy custom nginx config
+
+cp /vagrant/nginx/nginx.conf /etc/nginx/nginx.conf
+
+cp /vagrant/nginx/sites-available/default.conf /etc/nginx/sites-available/default.conf
+cp /vagrant/nginx/sites-available/vhosts.conf /etc/nginx/sites-available/vhosts.conf
+
+# symlink default site to enable it
+
+ln -s /etc/nginx/sites-available/default.conf /etc/nginx/sites-enabled/default.conf
+ln -s /etc/nginx/sites-available/vhosts.conf /etc/nginx/sites-enabled/vhosts.conf
+
+# test nginx configuration
+
+nginx -t
+
+echo "----------------------------------------------------------------------";
+echo "RESTARTING NGINX:";
+echo "----------------------------------------------------------------------";
+
+systemctl restart nginx.service &&
+
+# output the status of nginx
+#
+systemctl status nginx.service
+
+echo "----------------------------------------------------------------------";
+echo "CONFIGURE FIREWALL"
+echo "----------------------------------------------------------------------";
+
+ufw --force enable
+ufw allow ssh
+ufw allow http
+ufw allow https
+ufw status
+
+echo "----------------------------------------------------------------------";
+echo "CONTENTS OF WEBSERVER";
+echo "----------------------------------------------------------------------";
+
+ls -la /var/www/html
+
+SCRIPT
+
+Vagrant.configure("2") do |config|
+  
+    config.vm.box = "ubuntu/xenial64"
+    config.vm.box_check_update = false
+    config.vm.hostname = "alison.local"
+
+    # If port localhost:80 is not already in use.
+    # config.vm.network "forwarded_port", guest: 80, host: 80, hostname: true
+    
+    # If localhost:80 is already in use.
+    config.vm.network "private_network", ip: "192.168.50.4", hostname: true
+    
+    config.vm.synced_folder "../web-app", "/var/www/app.alison.local", create: true, disabled: false
+    config.vm.synced_folder "../web-cms", "/var/www/cms.alison.local", create: true, disabled: false
+    config.vm.synced_folder "../web-etl", "/var/www/etl.alison.local", create: true, disabled: false
+    
+    config.vm.provision "shell", inline: $setup
+end
