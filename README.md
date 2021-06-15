@@ -31,25 +31,56 @@ sudo vim /etc/hosts
 
 3. Type `ESC:wq` to save and quit vim.
 4. In a Terminal window `cd` to the directory with the `docker-compose.yml` file.
-5. Run the `docker-compose` command to build the images and start the containers.
+5. Run the `docker-compose` command to build the images and start the containers. The strapi container takes a few minutes to start for the first time.
 
 ```bash
-docker-compose up --force-recreate --always-recreate-deps --build
+docker-compose up
 ```
 
 6. Once all the docker containers have started try visiting: 
+
+    - http://alison.test noting to see
     - http://web-app.alison.test
     - http://web-cms.alison.test
     - http://web-etl.alison.test
     - http://server-api.alison.test
     - http://server-etl.alison.test
     - http://server-gql.alison.test
-    - http://server-strapi.alison.test/admin
+    - http://server-strapi.alison.test
 
 
-7. Stop the containers
+7. Connect to MySQL Containers If desired:
+
+__db-api__ (used by strapi)
+
+```bash
+host: alison.test
+port: 4400
+username: api
+password: api
+database: api
+```
+
+__db-etl__ (example db running in parallel)
+
+```bash
+host: alison.test
+port: 4401
+username: etl
+password: etl
+database: etl
+```
+
+8. Stop the containers
+
 ```bash
 docker-compose stop
+```
+
+9. When making container or image changes you can run this command to rebuild and start.
+
+```bash
+docker-compose --force-recreate --always-recreate-deps --build
 ```
 
 ## Docker Compose
