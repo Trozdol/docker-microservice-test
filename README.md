@@ -179,19 +179,44 @@ docker run \
 
 # MySQL
 
-    docker build
-        --no-cache \
-        --label db-api \
-        --name db-api \
-        --mount type=bind,src=./db-api/my.cnf,dst=/etc/my.cnf \
-        --mount type=bind,src=./db-api/data,dst=/var/lib/mysql \
-        -d mysql/mysql-server
+## db-api (wip)
 
-    docker run \
-        --rm \
-        --detach \
-        --network alison-net \
-        --publish 3306:3306 \
-        --hostname server-gql \
-        --name=db-api \
-        mysql/mysql-server
+```bash
+docker build
+    --no-cache \
+    --label db-api \
+    --name db-api \
+    --mount type=bind,src=./db-api/my.cnf,dst=/etc/my.cnf \
+    --mount type=bind,src=./db-api/data,dst=/var/lib/mysql \
+    -d mysql/mysql-server
+
+docker run \
+    --rm \
+    --detach \
+    --network alison-net \
+    --publish 3306:3306 \
+    --hostname db-api \
+    --name=db-api \
+    mysql/mysql-server
+```
+
+## db-etl (wip)
+
+```bash
+docker build
+    --no-cache \
+    --label db-etl \
+    --name db-etl \
+    --mount type=bind,src=./db-etl/my.cnf,dst=/etc/my.cnf \
+    --mount type=bind,src=./db-etl/data,dst=/var/lib/mysql \
+    -d mysql/mysql-server
+
+docker run \
+    --rm \
+    --detach \
+    --network alison-net \
+    --publish 3306:3306 \
+    --hostname db-etl \
+    --name=db-etl \
+    mysql/mysql-server
+```
