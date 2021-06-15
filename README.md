@@ -17,15 +17,16 @@ sudo vim /etc/hosts
 2. Add this to the end of your `/etc/hosts` file:
 
 ```
-127.0.0.1            alison.test
-127.0.0.1     db-api.alison.test
-127.0.0.1     db-etl.alison.test
-127.0.0.1    web-app.alison.test
-127.0.0.1    web-cms.alison.test
-127.0.0.1    web-etl.alison.test
-127.0.0.1 server-api.alison.test
-127.0.0.1 server-etl.alison.test
-127.0.0.1 server-gql.alison.test
+127.0.0.1               alison.test
+127.0.0.1        db-api.alison.test
+127.0.0.1        db-etl.alison.test
+127.0.0.1       web-app.alison.test
+127.0.0.1       web-cms.alison.test
+127.0.0.1       web-etl.alison.test
+127.0.0.1    server-api.alison.test
+127.0.0.1    server-etl.alison.test
+127.0.0.1    server-gql.alison.test
+127.0.0.1 server-strapi.alison.test
 ```
 
 3. Type `ESC:wq` to save and quit vim.
@@ -43,7 +44,13 @@ docker-compose up --force-recreate --always-recreate-deps --build
     - http://server-api.alison.test
     - http://server-etl.alison.test
     - http://server-gql.alison.test
+    - http://server-strapi.alison.test/admin
 
+
+7. Stop the containers
+```bash
+docker-compose stop
+```
 
 ## Docker Compose
 

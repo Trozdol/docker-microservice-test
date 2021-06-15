@@ -1,12 +1,20 @@
 version: '3.9'
 
-volumes:
-    vol-certs:
-
 networks:
     alison-net:
 
+volumes:
+    vol-certs:
+    vol-db-api:
+    vol-db-etl:
+
 services:
+
+    # 
+    # LOAD BALANCER:
+    # Maps public facing hostnames to internal hostnames/services. 
+    # This container will be the last to start so internal dns hostnames will resolve.
+    # 
 
     reverse-proxy:
         depends_on:
@@ -15,6 +23,7 @@ services:
             - server-api
             - server-etl
             - server-gql
+            - server-strapi
             - web-app
             - web-cms
             - web-etl
@@ -26,14 +35,16 @@ services:
         ports:
             - 80:80
         environment:
-            - NGINX_HOST=reverse-proxy
+            - NGINX_HOST=alison.test
             - NGINX_PORT=80
-            # APPLICATION_URL: http://alison.local
+        restart: always
         volumes:
             - ./reverse-proxy/nginx.conf:/etc/nginx/nginx.conf
-            # - ./reverse-proxy/error.log:/etc/nginx/error_log.log
-            # - vol-certs/:/etc/letsencrypt/
 
+    #
+    # DATABASE CONTAINERS:
+    # One database per container. Maps external-hostname:44XX -> internal-hostname:3306
+    #
 
     db-api:
         image: mysql/mysql-server
@@ -41,8 +52,8 @@ services:
         hostname: db-api
         networks:
             alison-net:
-        # ports:
-        #     - 3306:3306
+        ports:
+            - 4400:3306
         restart: always
         command: --default-authentication-plugin=mysql_native_password
         environment:
@@ -50,12 +61,8 @@ services:
             MYSQL_USER: api
             MYSQL_PASSWORD: api
             MYSQL_DATABASE: api
-            # - MYSQL_MAX_ALLOWED_PACKET=1024M
-            # - MYSQL_INNODB_BUFFER_POOL_SIZE=1G
-            # - MYSQL_INNODB_LOG_FILE_SIZE=256M
-            # - MYSQL_INNODB_LOG_BUFFER_SIZE=256M
         volumes:
-            - ./db-api/data:/var/lib/mysql
+            - vol-db-api:/var/lib/mysql
 
     db-etl:
         image: mysql/mysql-server
@@ -63,6 +70,8 @@ services:
         hostname: db-etl
         networks:
             alison-net:
+        ports:
+            - 4401:3306
         restart: always
         command: --default-authentication-plugin=mysql_native_password
         environment:
@@ -70,15 +79,12 @@ services:
             MYSQL_USER: etl
             MYSQL_PASSWORD: etl
             MYSQL_DATABASE: etl
-            # - MYSQL_MAX_ALLOWED_PACKET=1024M
-            # - MYSQL_INNODB_BUFFER_POOL_SIZE=1G
-            # - MYSQL_INNODB_LOG_FILE_SIZE=256M
-            # - MYSQL_INNODB_LOG_BUFFER_SIZE=256M
-        # ports:
-        #     - 3306:3306
         volumes:
-            - ./db-etl/data:/var/lib/mysql
+            - vol-db-etl:/var/lib/mysql
 
+    #
+    # API SERVER CONTAINERS:
+    #
 
     server-api:
         depends_on:
@@ -88,11 +94,10 @@ services:
         hostname: server-api
         networks:
             alison-net:
-        # ports:
-        #     - 80:80        
         environment:
             NODE_ENV: dev
             PORT: 80
+        restart: always
         build:
             labels:
                 com.trozlabs.alison.api: "Alison API"
@@ -102,56 +107,75 @@ services:
             - ./server-api:/usr/src/app
 
     server-etl:
+        depends_on:
+            - db-etl
         image: trozdol/server-etl
         container_name: server-etl
         hostname: server-etl
         networks: 
             alison-net:
-        # ports:
-        #     - 80:80
         environment:
             NODE_ENV: dev
             PORT: 80
+        restart: always
         build:
-            labels: 
-                com.trozlabs.alison.etl: "Alison ETL"
             context: ./server-etl
             dockerfile: ./Dockerfile
         volumes:
             - ./server-etl:/usr/src/app
 
     server-gql:
+        depends_on:
+            - db-etl
         image: trozdol/server-gql
         container_name: server-gql
         hostname: server-gql
         networks:
             alison-net:
-                # ipv4_address: 172.18.0.5
-                # aliases:
-                #     - gql.alison
-                #     - gql.alison.trozlabs.com
-        # ports:
-        #     - 80:80        
         environment:
             NODE_ENV: dev
             PORT: 80
+        restart: always
         build:
-            labels: 
-                com.trozlabs.alison.gql: "Alison GQL"
             context: ./server-gql
             dockerfile: ./Dockerfile
         volumes:
             - ./server-gql:/usr/src/app
 
+    server-strapi:
+        depends_on:
+            - db-api
+        image: strapi/strapi
+        container_name: server-strapi
+        hostname: server-strapi
+        networks:
+            alison-net:
+        restart: always
+        environment:
+            # APP_NAME: api.alison
+            NODE_ENV: dev
+            DATABASE_CLIENT: mysql
+            DATABASE_HOST: db-api
+            DATABASE_PORT: 3306
+            DATABASE_NAME: api
+            DATABASE_USERNAME: api
+            DATABASE_PASSWORD: api
+        volumes:
+            - ./api.alison:/usr/src/app
+
+    #
+    # STATIC WEB CONTAINERS:
+    #
 
     web-app:
+        depends_on:
+            - server-strapi
+            - server-api
         image: nginx:latest
         container_name: web-app
         hostname: web-app
         networks:
             alison-net:
-        # ports:
-        #     - 80:80        
         command: [nginx-debug, '-g', 'daemon off;']
         environment:
             - NGINX_HOST=web-app
@@ -161,13 +185,14 @@ services:
             - ./web-app:/usr/share/nginx/html
 
     web-cms:
+        depends_on:
+            - server-strapi
+            - server-api
         image: nginx:latest
         container_name: web-cms
         hostname: web-cms
         networks:
             alison-net:
-        # ports:
-        #     - 80:80    
         command: [nginx-debug, '-g', 'daemon off;']
         environment:
             - NGINX_HOST=web-cms
@@ -177,13 +202,13 @@ services:
             - ./web-cms:/usr/share/nginx/html
 
     web-etl:
+        depends_on:
+            - server-etl
         image: nginx:latest
         container_name: web-etl
         hostname: web-etl
         networks:
             alison-net:
-        # ports:
-        #     - 80:80    
         command: [nginx-debug, '-g', 'daemon off;']
         environment:
             - NGINX_HOST=web-etl
